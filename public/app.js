@@ -88,11 +88,12 @@ document.querySelectorAll('.nav-links li').forEach(link => {
 //  Modals
 // ─────────────────────────────────────────────
 function openModal(id) {
-    document.getElementById(id).style.display = 'block';
+    document.getElementById(id).style.display = 'flex';
 }
 
 function closeModal(id) {
     document.getElementById(id).style.display = 'none';
+    document.body.style.overflow = '';
     if (id === 'txModal') document.getElementById('txForm').reset();
     if (id === 'stockModal') {
         document.getElementById('stockForm').reset();

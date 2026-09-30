@@ -2,22 +2,27 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการครอบครัว (Family Finance & Stock)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>FamilyHub — ระบบจัดการครอบครัว</title>
+    <meta name="description" content="ระบบบันทึกรายรับ-รายจ่าย สต็อกสินค้า และงบประมาณครอบครัว">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
     <div class="app-container">
         <!-- Sidebar Navigation -->
-        <nav class="sidebar">
+        <nav class="sidebar" id="sidebar">
             <div class="logo">
                 <i class="fa-solid fa-house-chimney"></i>
                 <span>FamilyHub</span>
             </div>
-            <ul class="nav-links">
+            <ul class="nav-links" id="navLinks">
                 <li class="active" data-target="dashboard"><i class="fa-solid fa-chart-pie"></i> ภาพรวม</li>
                 <li data-target="transactions"><i class="fa-solid fa-money-bill-transfer"></i> รายรับ-รายจ่าย</li>
                 <li data-target="stock"><i class="fa-solid fa-box-open"></i> สต็อกสินค้า</li>
@@ -28,9 +33,14 @@
         <!-- Main Content Area -->
         <main class="main-content">
             <header class="top-bar">
-                <h1 id="page-title">แดชบอร์ดภาพรวม</h1>
-                <div class="user-profile">
-                    <img src="https://ui-avatars.com/api/?name=Family&background=0D8ABC&color=fff" alt="Profile" class="avatar">
+                <div style="display:flex; align-items:center; gap:0.875rem;">
+                    <button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="เปิดเมนู">
+                        <span></span><span></span><span></span>
+                    </button>
+                    <h1 id="page-title">แดชบอร์ดภาพรวม</h1>
+                </div>
+                <div class="top-bar-right">
+                    <img src="https://ui-avatars.com/api/?name=Family&background=6366f1&color=fff&bold=true" alt="Profile" class="avatar">
                 </div>
             </header>
 
@@ -38,14 +48,14 @@
             <section id="dashboard" class="view-section active">
                 <div class="kpi-cards">
                     <div class="card glass">
-                        <div class="card-icon income"><i class="fa-solid fa-arrow-down"></i></div>
+                        <div class="card-icon income"><i class="fa-solid fa-arrow-trend-up"></i></div>
                         <div class="card-info">
                             <h3>รายรับเดือนนี้</h3>
                             <p id="total-income" class="amount positive">฿0</p>
                         </div>
                     </div>
                     <div class="card glass">
-                        <div class="card-icon expense"><i class="fa-solid fa-arrow-up"></i></div>
+                        <div class="card-icon expense"><i class="fa-solid fa-arrow-trend-down"></i></div>
                         <div class="card-info">
                             <h3>รายจ่ายเดือนนี้</h3>
                             <p id="total-expense" class="amount negative">฿0</p>
@@ -59,12 +69,14 @@
                         </div>
                     </div>
                     <div class="card glass">
-                        <div class="card-icon" style="background: rgba(16, 185, 129, 0.2); color: #10b981;"><i class="fa-solid fa-piggy-bank"></i></div>
-                        <div class="card-info">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="card-icon" style="background:rgba(34,211,160,0.15);color:#22d3a0;box-shadow:0 4px 16px rgba(34,211,160,0.2);">
+                            <i class="fa-solid fa-piggy-bank"></i>
+                        </div>
+                        <div class="card-info" style="flex:1;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
                                 <h3>เงินเก็บสะสม</h3>
-                                <button class="btn secondary icon-only" onclick="editSavings()" style="padding: 2px 5px; min-width: 20px; min-height: 20px; font-size: 10px;">
-                                    <i class="fa-solid fa-pen"></i>
+                                <button class="btn secondary icon-only" onclick="editSavings()" title="แก้ไขเงินเก็บ" style="padding:3px 7px;font-size:0.75rem;">
+                                    <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
                             </div>
                             <p id="total-savings" class="amount positive">฿0</p>
@@ -72,21 +84,21 @@
                     </div>
                 </div>
 
-                <!-- User Monthly Budget Section (4,000 THB / month) -->
+                <!-- User Monthly Budget Section -->
                 <div class="budget-section glass">
                     <div class="budget-section-header">
                         <div class="budget-title-wrap">
-                            <div class="card-icon" style="background: rgba(99, 102, 241, 0.2); color: var(--primary); width: 44px; height: 44px; border-radius: 12px; font-size: 1.3rem;">
+                            <div class="card-icon" style="background:rgba(99,102,241,0.15);color:#a5b4fc;width:48px;height:48px;border-radius:14px;font-size:1.25rem;flex-shrink:0;">
                                 <i class="fa-solid fa-gauge-high"></i>
                             </div>
                             <div>
-                                <h3 style="font-size: 1.15rem; font-weight: 600;">โควต้างบรายบุคคลประจำเดือน</h3>
-                                <p class="budget-subtitle">ตัดยอดอัตโนมัติเมื่อมีการใช้จ่าย (เริ่มต้น ฿4,000 / เดือน / คน)</p>
+                                <h3 style="font-size:1.05rem;font-weight:700;">โควต้างบรายบุคคลประจำเดือน</h3>
+                                <p class="budget-subtitle">ตัดยอดอัตโนมัติเมื่อมีการใช้จ่าย (เริ่มต้น ฿4,000/เดือน/คน)</p>
                             </div>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
                             <span id="budget-month-label" class="badge-month">เดือนนี้</span>
-                            <button class="btn primary" onclick="openModal('userModal')" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">
+                            <button class="btn primary" onclick="openModal('userModal')" style="padding:0.45rem 0.9rem;font-size:0.82rem;">
                                 <i class="fa-solid fa-user-plus"></i> เพิ่มสมาชิก
                             </button>
                         </div>
@@ -98,11 +110,11 @@
 
                 <div class="charts-container">
                     <div class="chart-card glass">
-                        <h3>สรุปรายจ่ายตามหมวดหมู่</h3>
+                        <h3><i class="fa-solid fa-chart-pie" style="margin-right:0.4rem;color:var(--primary);"></i>รายจ่ายตามหมวดหมู่</h3>
                         <canvas id="categoryChart"></canvas>
                     </div>
                     <div class="chart-card glass">
-                        <h3>สรุปการใช้จ่ายรายบุคคล</h3>
+                        <h3><i class="fa-solid fa-chart-bar" style="margin-right:0.4rem;color:var(--secondary);"></i>การใช้จ่ายรายบุคคล</h3>
                         <canvas id="userChart"></canvas>
                     </div>
                 </div>
@@ -111,7 +123,7 @@
             <!-- Transactions View -->
             <section id="transactions" class="view-section">
                 <div class="section-header">
-                    <h2>รายการรายรับ-รายจ่ายทั้งหมด</h2>
+                    <h2>รายรับ-รายจ่ายทั้งหมด</h2>
                     <button class="btn primary" onclick="openModal('txModal')"><i class="fa-solid fa-plus"></i> เพิ่มรายการ</button>
                 </div>
                 <div class="table-container glass">
@@ -126,9 +138,7 @@
                                 <th>จัดการ</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <!-- Data injected via JS -->
-                        </tbody>
+                        <tbody></tbody>
                     </table>
                 </div>
             </section>
@@ -139,9 +149,7 @@
                     <h2>สต็อกสินค้าในบ้าน</h2>
                     <button class="btn primary" onclick="openModal('stockModal')"><i class="fa-solid fa-plus"></i> เพิ่มสินค้า</button>
                 </div>
-                <div class="stock-grid" id="stockGrid">
-                    <!-- Cards injected via JS -->
-                </div>
+                <div class="stock-grid" id="stockGrid"></div>
             </section>
 
             <!-- Fixed Transactions View -->
@@ -161,28 +169,48 @@
                                 <th>จัดการ</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <!-- Data injected via JS -->
-                        </tbody>
+                        <tbody></tbody>
                     </table>
                 </div>
             </section>
         </main>
     </div>
 
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav" id="mobileNav">
+        <ul>
+            <li class="active" data-target="dashboard" onclick="mobileNav(this)">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>ภาพรวม</span>
+            </li>
+            <li data-target="transactions" onclick="mobileNav(this)">
+                <i class="fa-solid fa-money-bill-transfer"></i>
+                <span>รายรับจ่าย</span>
+            </li>
+            <li data-target="stock" onclick="mobileNav(this)">
+                <i class="fa-solid fa-box-open"></i>
+                <span>สต็อก</span>
+            </li>
+            <li data-target="fixed" onclick="mobileNav(this)">
+                <i class="fa-solid fa-calendar-check"></i>
+                <span>ประจำ</span>
+            </li>
+        </ul>
+    </nav>
+
     <!-- Modals -->
-    <!-- Add Transaction Modal -->
-    <div id="txModal" class="modal">
+    <!-- Transaction Modal -->
+    <div id="txModal" class="modal" onclick="handleModalClick(event,'txModal')">
         <div class="modal-content glass">
             <span class="close" onclick="closeModal('txModal')">&times;</span>
-            <h2 id="txModalTitle">เพิ่มรายการใหม่</h2>
+            <h2 id="txModalTitle"><i class="fa-solid fa-receipt" style="margin-right:0.5rem;color:var(--primary);"></i>เพิ่มรายการใหม่</h2>
             <form id="txForm">
                 <input type="hidden" id="txId">
                 <div class="form-group">
                     <label>ประเภท</label>
                     <select id="txType" required>
-                        <option value="expense">รายจ่าย (-)</option>
-                        <option value="income">รายรับ (+)</option>
+                        <option value="expense">💸 รายจ่าย (-)</option>
+                        <option value="income">💰 รายรับ (+)</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -191,58 +219,58 @@
                 </div>
                 <div class="form-group">
                     <label>จำนวนเงิน (บาท)</label>
-                    <input type="number" id="txAmount" required min="0" step="0.01">
+                    <input type="number" id="txAmount" required min="0" step="0.01" placeholder="0.00">
                 </div>
                 <div class="form-group">
-                    <label>ผู้บันทึก (ชื่อ)</label>
-                    <input type="text" id="txUser" list="usersList" required placeholder="เช่น keng, miilk, พ่อ, แม่">
+                    <label>ผู้บันทึก</label>
+                    <input type="text" id="txUser" list="usersList" required placeholder="เช่น พ่อ, แม่, น้อง">
                     <datalist id="usersList"></datalist>
                 </div>
-                <button type="submit" class="btn primary submit-btn">บันทึก</button>
+                <button type="submit" class="btn primary submit-btn">บันทึกรายการ</button>
             </form>
         </div>
     </div>
 
-    <!-- Add Stock Modal -->
-    <div id="stockModal" class="modal">
+    <!-- Stock Modal -->
+    <div id="stockModal" class="modal" onclick="handleModalClick(event,'stockModal')">
         <div class="modal-content glass">
             <span class="close" onclick="closeModal('stockModal')">&times;</span>
-            <h2>เพิ่ม/แก้ไข สินค้า</h2>
+            <h2><i class="fa-solid fa-box" style="margin-right:0.5rem;color:var(--secondary);"></i>เพิ่ม/แก้ไข สินค้า</h2>
             <form id="stockForm">
                 <input type="hidden" id="stockId">
                 <div class="form-group">
                     <label>ชื่อสินค้า</label>
-                    <input type="text" id="stockName" required>
+                    <input type="text" id="stockName" required placeholder="เช่น น้ำยาล้างจาน">
                 </div>
                 <div class="form-group">
                     <label>จำนวนคงเหลือ</label>
-                    <input type="number" id="stockQty" required min="0" step="0.1">
+                    <input type="number" id="stockQty" required min="0" step="0.1" placeholder="0">
                 </div>
                 <div class="form-group">
                     <label>หน่วยนับ</label>
-                    <input type="text" id="stockUnit" required placeholder="เช่น ขวด, ถุง">
+                    <input type="text" id="stockUnit" required placeholder="เช่น ขวด, ถุง, ชิ้น">
                 </div>
                 <div class="form-group">
-                    <label>จุดแจ้งเตือน (เตือนเมื่อเหลือน้อยกว่าหรือเท่ากับ)</label>
-                    <input type="number" id="stockThreshold" required min="0" value="1">
+                    <label>แจ้งเตือนเมื่อเหลือน้อยกว่า</label>
+                    <input type="number" id="stockThreshold" required min="0" value="1" placeholder="1">
                 </div>
-                <button type="submit" class="btn primary submit-btn">บันทึก</button>
+                <button type="submit" class="btn primary submit-btn">บันทึกสินค้า</button>
             </form>
         </div>
     </div>
 
-    <!-- Add Fixed Transaction Modal -->
-    <div id="fixedModal" class="modal">
+    <!-- Fixed Transaction Modal -->
+    <div id="fixedModal" class="modal" onclick="handleModalClick(event,'fixedModal')">
         <div class="modal-content glass">
             <span class="close" onclick="closeModal('fixedModal')">&times;</span>
-            <h2>เพิ่มรายการประจำ</h2>
+            <h2><i class="fa-solid fa-calendar-check" style="margin-right:0.5rem;color:var(--positive);"></i>เพิ่มรายการประจำ</h2>
             <form id="fixedForm">
                 <input type="hidden" id="fixedId">
                 <div class="form-group">
                     <label>ประเภท</label>
                     <select id="fixedType" required>
-                        <option value="expense">รายจ่าย (-)</option>
-                        <option value="income">รายรับ (+)</option>
+                        <option value="expense">💸 รายจ่าย (-)</option>
+                        <option value="income">💰 รายรับ (+)</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -251,22 +279,22 @@
                 </div>
                 <div class="form-group">
                     <label>จำนวนเงิน (บาท)</label>
-                    <input type="number" id="fixedAmount" required min="0" step="0.01">
+                    <input type="number" id="fixedAmount" required min="0" step="0.01" placeholder="0.00">
                 </div>
                 <div class="form-group">
                     <label>ตัดยอดทุกวันที่</label>
-                    <input type="number" id="fixedDay" required min="1" max="31">
+                    <input type="number" id="fixedDay" required min="1" max="31" placeholder="1-31">
                 </div>
-                <button type="submit" class="btn primary submit-btn">บันทึก</button>
+                <button type="submit" class="btn primary submit-btn">บันทึกรายการประจำ</button>
             </form>
         </div>
     </div>
 
-    <!-- Add User Modal -->
-    <div id="userModal" class="modal">
+    <!-- User Modal -->
+    <div id="userModal" class="modal" onclick="handleModalClick(event,'userModal')">
         <div class="modal-content glass">
             <span class="close" onclick="closeModal('userModal')">&times;</span>
-            <h2>เพิ่มสมาชิกครอบครัว</h2>
+            <h2><i class="fa-solid fa-user-plus" style="margin-right:0.5rem;color:var(--primary);"></i>เพิ่มสมาชิกครอบครัว</h2>
             <form id="userForm">
                 <div class="form-group">
                     <label>ชื่อสมาชิก</label>
@@ -274,13 +302,66 @@
                 </div>
                 <div class="form-group">
                     <label>โควต้างบรายเดือน (บาท)</label>
-                    <input type="number" id="newUserBudget" required min="0" step="100" value="4000" placeholder="4000">
+                    <input type="number" id="newUserBudget" required min="0" step="100" value="4000">
                 </div>
                 <button type="submit" class="btn primary submit-btn">บันทึกสมาชิก</button>
             </form>
         </div>
     </div>
 
+    <script>
+        // Sidebar toggle
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('open');
+        }
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('open');
+        }
+
+        // Mobile nav
+        function mobileNav(el) {
+            document.querySelectorAll('.mobile-nav li').forEach(li => li.classList.remove('active'));
+            el.classList.add('active');
+            switchView(el.dataset.target);
+        }
+
+        function switchView(target) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(target).classList.add('active');
+            const titles = { dashboard: 'แดชบอร์ดภาพรวม', transactions: 'รายรับ-รายจ่าย', stock: 'สต็อกสินค้า', fixed: 'รายการประจำ' };
+            document.getElementById('page-title').textContent = titles[target] || target;
+
+            // sync sidebar
+            document.querySelectorAll('#navLinks li').forEach(li => {
+                li.classList.toggle('active', li.dataset.target === target);
+            });
+            closeSidebar();
+        }
+
+        // Sidebar nav
+        document.getElementById('navLinks').addEventListener('click', e => {
+            const li = e.target.closest('li');
+            if (!li) return;
+            switchView(li.dataset.target);
+        });
+
+        // Modal helpers
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+            document.getElementById(id).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+            document.getElementById(id).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        function handleModalClick(e, id) {
+            if (e.target === document.getElementById(id)) closeModal(id);
+        }
+    </script>
     <script src="app.js"></script>
 </body>
 </html>
