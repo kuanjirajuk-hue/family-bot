@@ -40,8 +40,8 @@ pool.query = async function(text, values) {
       text = text.replace("INSERT IGNORE INTO users (id, name, budget)", "INSERT INTO users (id, name, budget)") + " ON CONFLICT (id) DO NOTHING";
   } else if (text.includes("INSERT IGNORE INTO users (id, name)")) {
       text = text.replace("INSERT IGNORE INTO users (id, name)", "INSERT INTO users (id, name)") + " ON CONFLICT (id) DO NOTHING";
-  } else if (text.includes("ON DUPLICATE KEY UPDATE setting_value = ?")) {
-      text = text.replace("ON DUPLICATE KEY UPDATE setting_value = ?", "ON CONFLICT (setting_key) DO UPDATE SET setting_value = $3");
+  } else if (text.includes("ON DUPLICATE KEY UPDATE setting_value = $3")) {
+      text = text.replace("ON DUPLICATE KEY UPDATE setting_value = $3", "ON CONFLICT (setting_key) DO UPDATE SET setting_value = $3");
   }
   
   const result = await originalQuery(text, values);
