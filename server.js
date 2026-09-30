@@ -29,7 +29,7 @@ const originalQuery = pool.query.bind(pool);
 pool.query = async function(text, values) {
   if (typeof text === 'string' && text.includes('?')) {
     let i = 1;
-    text = text.replace(/\?/g, () => `${i++}`);
+    text = text.replace(/\?/g, () => `$${i++}`);
   }
   text = text.replace(/ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci/g, '');
   text = text.replace(/DATETIME/g, 'TIMESTAMP');
