@@ -4,7 +4,7 @@ const line = require('@line/bot-sdk');
 const cron = require('node-cron');
 const { v4: uuidv4 } = require('uuid');
 const bodyParser = require('body-parser');
-const mysql = require('mysql2/promise');
+const { Pool } = require('pg');
 require('dotenv').config();
 
 const app = express();
@@ -18,35 +18,42 @@ const lineConfig = {
 
 const client = new line.Client(lineConfig);
 
-// MySQL Connection Pool (XAMPP default: root, no password)
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASS || '',
-  database: 'family_system',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  charset: 'utf8mb4'
+// PostgreSQL Connection Pool
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || `postgres://${process.env.DB_USER || 'postgres'}:${process.env.DB_PASS || 'postgres'}@${process.env.DB_HOST || 'localhost'}:5432/family_system`,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
+
+// Wrapper to make pg compatible with existing mysql2 queries
+const originalQuery = pool.query.bind(pool);
+pool.query = async function(text, values) {
+  if (typeof text === 'string' && text.includes('?')) {
+    let i = 1;
+    text = text.replace(/\?/g, () => `${i++}`);
+  }
+  text = text.replace(/ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci/g, '');
+  text = text.replace(/DATETIME/g, 'TIMESTAMP');
+  
+  if (text.includes("INSERT IGNORE INTO settings")) {
+      text = text.replace("INSERT IGNORE INTO settings", "INSERT INTO settings").replace("VALUES ('savings', '0')", "VALUES ('savings', '0') ON CONFLICT (setting_key) DO NOTHING");
+  } else if (text.includes("INSERT IGNORE INTO users (id, name, budget)")) {
+      text = text.replace("INSERT IGNORE INTO users (id, name, budget)", "INSERT INTO users (id, name, budget)") + " ON CONFLICT (id) DO NOTHING";
+  } else if (text.includes("INSERT IGNORE INTO users (id, name)")) {
+      text = text.replace("INSERT IGNORE INTO users (id, name)", "INSERT INTO users (id, name)") + " ON CONFLICT (id) DO NOTHING";
+  } else if (text.includes("ON DUPLICATE KEY UPDATE setting_value = ?")) {
+      text = text.replace("ON DUPLICATE KEY UPDATE setting_value = ?", "ON CONFLICT (setting_key) DO UPDATE SET setting_value = $3");
+  }
+  
+  const result = await originalQuery(text, values);
+  return [result.rows, result.fields];
+};
 
 // ─────────────────────────────────────────────
 //  Initialize Database Tables
 // ─────────────────────────────────────────────
 async function initDb() {
   try {
-    // Create DB if not exists (connect without DB first)
-    const initConn = await mysql.createConnection({
-      host: process.env.DB_HOST || 'localhost',
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASS || ''
-    });
-    await initConn.query(
-      `CREATE DATABASE IF NOT EXISTS family_system
-       DEFAULT CHARACTER SET utf8mb4
-       COLLATE utf8mb4_unicode_ci`
-    );
-    await initConn.end();
+    // PostgreSQL database is provided by Render, no need to create it here.
 
     // Users (with monthly budget limit, default 4000.00 THB)
     await pool.query(`
@@ -131,7 +138,7 @@ async function initDb() {
 
     console.log('✅ Database initialized successfully.');
   } catch (err) {
-    console.error('❌ Failed to initialize database. Is XAMPP MySQL running?', err.message);
+    console.error('❌ Failed to initialize database. Is PostgreSQL running?', err.message);
     process.exit(1); // Stop server if DB is unavailable
   }
 }
