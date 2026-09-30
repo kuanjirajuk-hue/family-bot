@@ -1,0 +1,25 @@
+{
+  "users": {
+    "USER_ID_1": {
+      "name": "User 1",
+      "id": "USER_ID_1"
+    },
+    "USER_ID_2": {
+      "name": "User 2",
+      "id": "USER_ID_2"
+    }
+  },
+  "transactions": [
+    {
+      "type": "expense",
+      "category": "ค่าเน็ต+หนัง",
+      "amount": 595,
+      "userId": "เก่ง",
+      "id": "a5123edf-a2f7-44bf-90cb-7eff9bb207b3",
+      "date": "2026-09-26T13:13:55.578Z"
+    }
+  ],
+  "fixed_transactions": [],
+  "stock": [],
+  "reminders": []
+}

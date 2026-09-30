@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการครอบครัว (Family Finance & Stock)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <i class="fa-solid fa-house-chimney"></i>
+                <span>FamilyHub</span>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-target="dashboard"><i class="fa-solid fa-chart-pie"></i> ภาพรวม</li>
+                <li data-target="transactions"><i class="fa-solid fa-money-bill-transfer"></i> รายรับ-รายจ่าย</li>
+                <li data-target="stock"><i class="fa-solid fa-box-open"></i> สต็อกสินค้า</li>
+                <li data-target="fixed"><i class="fa-solid fa-calendar-check"></i> รายการประจำ</li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-bar">
+                <h1 id="page-title">แดชบอร์ดภาพรวม</h1>
+                <div class="user-profile">
+                    <img src="https://ui-avatars.com/api/?name=Family&background=0D8ABC&color=fff" alt="Profile" class="avatar">
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <section id="dashboard" class="view-section active">
+                <div class="kpi-cards">
+                    <div class="card glass">
+                        <div class="card-icon income"><i class="fa-solid fa-arrow-down"></i></div>
+                        <div class="card-info">
+                            <h3>รายรับเดือนนี้</h3>
+                            <p id="total-income" class="amount positive">฿0</p>
+                        </div>
+                    </div>
+                    <div class="card glass">
+                        <div class="card-icon expense"><i class="fa-solid fa-arrow-up"></i></div>
+                        <div class="card-info">
+                            <h3>รายจ่ายเดือนนี้</h3>
+                            <p id="total-expense" class="amount negative">฿0</p>
+                        </div>
+                    </div>
+                    <div class="card glass">
+                        <div class="card-icon balance"><i class="fa-solid fa-wallet"></i></div>
+                        <div class="card-info">
+                            <h3>คงเหลือ</h3>
+                            <p id="total-balance" class="amount">฿0</p>
+                        </div>
+                    </div>
+                    <div class="card glass">
+                        <div class="card-icon" style="background: rgba(16, 185, 129, 0.2); color: #10b981;"><i class="fa-solid fa-piggy-bank"></i></div>
+                        <div class="card-info">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3>เงินเก็บสะสม</h3>
+                                <button class="btn secondary icon-only" onclick="editSavings()" style="padding: 2px 5px; min-width: 20px; min-height: 20px; font-size: 10px;">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                            </div>
+                            <p id="total-savings" class="amount positive">฿0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Monthly Budget Section (4,000 THB / month) -->
+                <div class="budget-section glass">
+                    <div class="budget-section-header">
+                        <div class="budget-title-wrap">
+                            <div class="card-icon" style="background: rgba(99, 102, 241, 0.2); color: var(--primary); width: 44px; height: 44px; border-radius: 12px; font-size: 1.3rem;">
+                                <i class="fa-solid fa-gauge-high"></i>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 1.15rem; font-weight: 600;">โควต้างบรายบุคคลประจำเดือน</h3>
+                                <p class="budget-subtitle">ตัดยอดอัตโนมัติเมื่อมีการใช้จ่าย (เริ่มต้น ฿4,000 / เดือน / คน)</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span id="budget-month-label" class="badge-month">เดือนนี้</span>
+                            <button class="btn primary" onclick="openModal('userModal')" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">
+                                <i class="fa-solid fa-user-plus"></i> เพิ่มสมาชิก
+                            </button>
+                        </div>
+                    </div>
+                    <div class="user-budget-grid" id="userBudgetGrid">
+                        <!-- Cards injected via JS -->
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-card glass">
+                        <h3>สรุปรายจ่ายตามหมวดหมู่</h3>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <div class="chart-card glass">
+                        <h3>สรุปการใช้จ่ายรายบุคคล</h3>
+                        <canvas id="userChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Transactions View -->
+            <section id="transactions" class="view-section">
+                <div class="section-header">
+                    <h2>รายการรายรับ-รายจ่ายทั้งหมด</h2>
+                    <button class="btn primary" onclick="openModal('txModal')"><i class="fa-solid fa-plus"></i> เพิ่มรายการ</button>
+                </div>
+                <div class="table-container glass">
+                    <table id="txTable">
+                        <thead>
+                            <tr>
+                                <th>วันที่</th>
+                                <th>ประเภท</th>
+                                <th>หมวดหมู่</th>
+                                <th>จำนวนเงิน</th>
+                                <th>ผู้บันทึก</th>
+                                <th>จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Stock View -->
+            <section id="stock" class="view-section">
+                <div class="section-header">
+                    <h2>สต็อกสินค้าในบ้าน</h2>
+                    <button class="btn primary" onclick="openModal('stockModal')"><i class="fa-solid fa-plus"></i> เพิ่มสินค้า</button>
+                </div>
+                <div class="stock-grid" id="stockGrid">
+                    <!-- Cards injected via JS -->
+                </div>
+            </section>
+
+            <!-- Fixed Transactions View -->
+            <section id="fixed" class="view-section">
+                <div class="section-header">
+                    <h2>รายการประจำเดือน</h2>
+                    <button class="btn primary" onclick="openModal('fixedModal')"><i class="fa-solid fa-plus"></i> เพิ่มรายการประจำ</button>
+                </div>
+                <div class="table-container glass">
+                    <table id="fixedTable">
+                        <thead>
+                            <tr>
+                                <th>วันที่ (ของเดือน)</th>
+                                <th>ประเภท</th>
+                                <th>หมวดหมู่</th>
+                                <th>จำนวนเงิน</th>
+                                <th>จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Add Transaction Modal -->
+    <div id="txModal" class="modal">
+        <div class="modal-content glass">
+            <span class="close" onclick="closeModal('txModal')">&times;</span>
+            <h2 id="txModalTitle">เพิ่มรายการใหม่</h2>
+            <form id="txForm">
+                <input type="hidden" id="txId">
+                <div class="form-group">
+                    <label>ประเภท</label>
+                    <select id="txType" required>
+                        <option value="expense">รายจ่าย (-)</option>
+                        <option value="income">รายรับ (+)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>หมวดหมู่ / รายละเอียด</label>
+                    <input type="text" id="txCategory" required placeholder="เช่น ค่ากาแฟ, เงินเดือน">
+                </div>
+                <div class="form-group">
+                    <label>จำนวนเงิน (บาท)</label>
+                    <input type="number" id="txAmount" required min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>ผู้บันทึก (ชื่อ)</label>
+                    <input type="text" id="txUser" list="usersList" required placeholder="เช่น keng, miilk, พ่อ, แม่">
+                    <datalist id="usersList"></datalist>
+                </div>
+                <button type="submit" class="btn primary submit-btn">บันทึก</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Stock Modal -->
+    <div id="stockModal" class="modal">
+        <div class="modal-content glass">
+            <span class="close" onclick="closeModal('stockModal')">&times;</span>
+            <h2>เพิ่ม/แก้ไข สินค้า</h2>
+            <form id="stockForm">
+                <input type="hidden" id="stockId">
+                <div class="form-group">
+                    <label>ชื่อสินค้า</label>
+                    <input type="text" id="stockName" required>
+                </div>
+                <div class="form-group">
+                    <label>จำนวนคงเหลือ</label>
+                    <input type="number" id="stockQty" required min="0" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>หน่วยนับ</label>
+                    <input type="text" id="stockUnit" required placeholder="เช่น ขวด, ถุง">
+                </div>
+                <div class="form-group">
+                    <label>จุดแจ้งเตือน (เตือนเมื่อเหลือน้อยกว่าหรือเท่ากับ)</label>
+                    <input type="number" id="stockThreshold" required min="0" value="1">
+                </div>
+                <button type="submit" class="btn primary submit-btn">บันทึก</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Fixed Transaction Modal -->
+    <div id="fixedModal" class="modal">
+        <div class="modal-content glass">
+            <span class="close" onclick="closeModal('fixedModal')">&times;</span>
+            <h2>เพิ่มรายการประจำ</h2>
+            <form id="fixedForm">
+                <input type="hidden" id="fixedId">
+                <div class="form-group">
+                    <label>ประเภท</label>
+                    <select id="fixedType" required>
+                        <option value="expense">รายจ่าย (-)</option>
+                        <option value="income">รายรับ (+)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>หมวดหมู่</label>
+                    <input type="text" id="fixedCategory" required placeholder="เช่น ค่าเช่าห้อง">
+                </div>
+                <div class="form-group">
+                    <label>จำนวนเงิน (บาท)</label>
+                    <input type="number" id="fixedAmount" required min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>ตัดยอดทุกวันที่</label>
+                    <input type="number" id="fixedDay" required min="1" max="31">
+                </div>
+                <button type="submit" class="btn primary submit-btn">บันทึก</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="userModal" class="modal">
+        <div class="modal-content glass">
+            <span class="close" onclick="closeModal('userModal')">&times;</span>
+            <h2>เพิ่มสมาชิกครอบครัว</h2>
+            <form id="userForm">
+                <div class="form-group">
+                    <label>ชื่อสมาชิก</label>
+                    <input type="text" id="newUserName" required placeholder="เช่น พ่อ, แม่, บอย, น้อง">
+                </div>
+                <div class="form-group">
+                    <label>โควต้างบรายเดือน (บาท)</label>
+                    <input type="number" id="newUserBudget" required min="0" step="100" value="4000" placeholder="4000">
+                </div>
+                <button type="submit" class="btn primary submit-btn">บันทึกสมาชิก</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
