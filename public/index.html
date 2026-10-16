@@ -75,11 +75,16 @@
                         <div class="card-info" style="flex:1;">
                             <div style="display:flex;justify-content:space-between;align-items:center;">
                                 <h3>เงินเก็บสะสม</h3>
-                                <button class="btn secondary icon-only" onclick="editSavings()" title="แก้ไขเงินเก็บ" style="padding:3px 7px;font-size:0.75rem;">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </button>
+                                <div style="display:flex;gap:4px;align-items:center;">
+                                    <button type="button" class="btn secondary icon-only" id="toggleSavingsBtn" onclick="toggleSavingsVisibility()" title="ซ่อน/แสดงยอดเงิน" style="padding:3px 7px;font-size:0.75rem;">
+                                        <i class="fa-solid fa-eye-slash" id="toggleSavingsIcon"></i>
+                                    </button>
+                                    <button type="button" class="btn secondary icon-only" onclick="editSavings()" title="แก้ไขเงินเก็บ" style="padding:3px 7px;font-size:0.75rem;">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <p id="total-savings" class="amount positive">฿0</p>
+                            <p id="total-savings" class="amount positive" onclick="toggleSavingsVisibility()" style="cursor:pointer;" title="คลิกเพื่อซ่อน/แสดงยอดเงิน">฿0</p>
                         </div>
                     </div>
                 </div>
@@ -123,9 +128,144 @@
             <!-- Transactions View -->
             <section id="transactions" class="view-section">
                 <div class="section-header">
-                    <h2>รายรับ-รายจ่ายทั้งหมด</h2>
-                    <button class="btn primary" onclick="openModal('txModal')"><i class="fa-solid fa-plus"></i> เพิ่มรายการ</button>
+                    <div class="section-title-wrap">
+                        <h2>รายรับ-รายจ่ายทั้งหมด</h2>
+                        <span class="section-subtitle">ค้นหา กรอง และตรวจสอบรายการบันทึกการเงินครอบครัว</span>
+                    </div>
+                    <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                        <button type="button" class="btn secondary" onclick="exportFilteredTransactionsCSV()" title="ส่งออกข้อมูลรายการที่กรองไว้เป็นไฟล์ CSV">
+                            <i class="fa-solid fa-file-arrow-down"></i> ส่งออก CSV
+                        </button>
+                        <button type="button" class="btn primary" onclick="openModal('txModal')">
+                            <i class="fa-solid fa-plus"></i> เพิ่มรายการ
+                        </button>
+                    </div>
                 </div>
+
+                <!-- Transaction Filters -->
+                <div class="filter-card glass">
+                    <!-- Period Quick Pills -->
+                    <div class="filter-period-row">
+                        <span class="filter-label"><i class="fa-solid fa-calendar-days"></i> ช่วงเวลา:</span>
+                        <div class="filter-pills" id="txPeriodPills">
+                            <button type="button" class="filter-pill active" data-period="all"><i class="fa-solid fa-infinity"></i> ทั้งหมด</button>
+                            <button type="button" class="filter-pill" data-period="month"><i class="fa-regular fa-calendar-check"></i> เดือนนี้</button>
+                            <button type="button" class="filter-pill" data-period="today"><i class="fa-regular fa-clock"></i> วันนี้</button>
+                            <button type="button" class="filter-pill" data-period="7days"><i class="fa-solid fa-bolt"></i> 7 วันล่าสุด</button>
+                            <button type="button" class="filter-pill" data-period="prev_month"><i class="fa-solid fa-angles-left"></i> เดือนก่อน</button>
+                            <button type="button" class="filter-pill" data-period="custom"><i class="fa-solid fa-calendar-week"></i> กำหนดเอง</button>
+                        </div>
+                    </div>
+
+                    <!-- Filter Controls Grid -->
+                    <div class="filter-grid">
+                        <!-- Search Keyword -->
+                        <div class="filter-item">
+                            <label for="txFilterSearch"><i class="fa-solid fa-magnifying-glass"></i> ค้นหา</label>
+                            <div class="search-input-wrapper">
+                                <input type="text" id="txFilterSearch" placeholder="หมวดหมู่, บันทึก, ผู้บันทึก..." autocomplete="off">
+                                <button type="button" id="txClearSearch" class="btn-clear-search" title="ล้างการค้นหา" style="display: none;">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Type Filter -->
+                        <div class="filter-item">
+                            <label for="txFilterType"><i class="fa-solid fa-tags"></i> ประเภท</label>
+                            <select id="txFilterType">
+                                <option value="all">ทั้งหมด (รายรับ & รายจ่าย)</option>
+                                <option value="income">💰 รายรับ (+)</option>
+                                <option value="expense">💸 รายจ่าย (-)</option>
+                            </select>
+                        </div>
+
+                        <!-- Category Filter -->
+                        <div class="filter-item">
+                            <label for="txFilterCategory"><i class="fa-solid fa-shapes"></i> หมวดหมู่</label>
+                            <select id="txFilterCategory">
+                                <option value="all">ทุกหมวดหมู่</option>
+                            </select>
+                        </div>
+
+                        <!-- User Filter -->
+                        <div class="filter-item">
+                            <label for="txFilterUser"><i class="fa-solid fa-user"></i> ผู้บันทึก</label>
+                            <select id="txFilterUser">
+                                <option value="all">สมาชิกทุกคน</option>
+                            </select>
+                        </div>
+
+                        <!-- Sort By -->
+                        <div class="filter-item">
+                            <label for="txFilterSort"><i class="fa-solid fa-arrow-down-wide-short"></i> เรียงตาม</label>
+                            <select id="txFilterSort">
+                                <option value="date-desc">🕒 วันที่: ล่าสุด → เก่าสุด</option>
+                                <option value="date-asc">🕒 วันที่: เก่าสุด → ล่าสุด</option>
+                                <option value="amount-desc">💵 จำนวนเงิน: มาก → น้อย</option>
+                                <option value="amount-asc">💵 จำนวนเงิน: น้อย → มาก</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Custom Date Range Row -->
+                    <div class="filter-custom-date-row" id="txCustomDateRow" style="display: none;">
+                        <div class="date-range-group">
+                            <div class="date-field">
+                                <label for="txDateStart">จากวันที่:</label>
+                                <input type="date" id="txDateStart">
+                            </div>
+                            <span class="date-range-sep"><i class="fa-solid fa-arrow-right"></i></span>
+                            <div class="date-field">
+                                <label for="txDateEnd">ถึงวันที่:</label>
+                                <input type="date" id="txDateEnd">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filter Action / Status Bar -->
+                    <div class="filter-footer">
+                        <div class="filter-status">
+                            <span id="txFilterCount">แสดง 0 รายการ</span>
+                        </div>
+                        <button type="button" class="btn secondary btn-sm" id="txResetFiltersBtn" onclick="resetTxFilters()">
+                            <i class="fa-solid fa-rotate-left"></i> ล้างตัวกรอง
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filter Summary Mini Cards -->
+                <div class="filter-summary-cards" id="txFilterSummary">
+                    <div class="summary-mini-card income-card">
+                        <div class="mini-icon"><i class="fa-solid fa-arrow-down-left"></i></div>
+                        <div class="mini-info">
+                            <span class="mini-label">รายรับรวมที่กรอง</span>
+                            <span class="mini-value" id="txSummaryIncome">฿0</span>
+                        </div>
+                    </div>
+                    <div class="summary-mini-card expense-card">
+                        <div class="mini-icon"><i class="fa-solid fa-arrow-up-right"></i></div>
+                        <div class="mini-info">
+                            <span class="mini-label">รายจ่ายรวมที่กรอง</span>
+                            <span class="mini-value" id="txSummaryExpense">฿0</span>
+                        </div>
+                    </div>
+                    <div class="summary-mini-card balance-card">
+                        <div class="mini-icon"><i class="fa-solid fa-wallet"></i></div>
+                        <div class="mini-info">
+                            <span class="mini-label">คงเหลือสุทธิ</span>
+                            <span class="mini-value" id="txSummaryBalance">฿0</span>
+                        </div>
+                    </div>
+                    <div class="summary-mini-card count-card">
+                        <div class="mini-icon"><i class="fa-solid fa-receipt"></i></div>
+                        <div class="mini-info">
+                            <span class="mini-label">จำนวนที่พบ</span>
+                            <span class="mini-value" id="txSummaryCount">0 รายการ</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="table-container glass">
                     <table id="txTable">
                         <thead>
@@ -329,7 +469,8 @@
 
         function switchView(target) {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-            document.getElementById(target).classList.add('active');
+            const targetSection = document.getElementById(target);
+            if (targetSection) targetSection.classList.add('active');
             const titles = { dashboard: 'แดชบอร์ดภาพรวม', transactions: 'รายรับ-รายจ่าย', stock: 'สต็อกสินค้า', fixed: 'รายการประจำ' };
             document.getElementById('page-title').textContent = titles[target] || target;
 
@@ -337,7 +478,17 @@
             document.querySelectorAll('#navLinks li').forEach(li => {
                 li.classList.toggle('active', li.dataset.target === target);
             });
+            // sync mobile nav
+            document.querySelectorAll('.mobile-nav li').forEach(li => {
+                li.classList.toggle('active', li.dataset.target === target);
+            });
             closeSidebar();
+
+            // trigger view data loaders
+            if (target === 'dashboard' && typeof window.loadDashboard === 'function') window.loadDashboard();
+            if (target === 'transactions' && typeof window.loadTransactions === 'function') window.loadTransactions();
+            if (target === 'stock' && typeof window.loadStock === 'function') window.loadStock();
+            if (target === 'fixed' && typeof window.loadFixed === 'function') window.loadFixed();
         }
 
         // Sidebar nav
